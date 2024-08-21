@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import ContactList from '../components/ContactList';
 import ContactForm from '../components/ContactForm';
 import { Grid, Paper } from '@mui/material';
+
+const API_URL = 'https://contact-manager-gamma-ten.vercel.app/api/contacts'; 
 
 function Home() {
   const [contacts, setContacts] = useState([]);
@@ -12,48 +15,49 @@ function Home() {
   }, []);
 
   const fetchContacts = async () => {
-    const response = await fetch('/api/contacts/getall');
-    const data = await response.json();
-    setContacts(data.data);
+    try {
+      const response = await axios.get(`${API_URL}/getall`);
+      setContacts(response.data.data);
+    } catch (error) {
+      console.error('Error fetching contacts:', error);
+    }
   };
 
   const addContact = async (contact) => {
-    const response = await fetch('/api/contacts/', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(contact),
-    });
-    if (response.ok) {
-      const newContact = await response.json();
-      setContacts((prevContacts) => [...prevContacts, newContact]); 
+    try {
+      const response = await axios.post(`${API_URL}/`, contact, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      setContacts((prevContacts) => [...prevContacts, response.data]);
+    } catch (error) {
+      console.error('Error adding contact:', error);
     }
   };
 
   const updateContact = async (contact) => {
-    const response = await fetch(`/api/contacts/${contact._id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(contact),
-    });
-    if (response.ok) {
-      const updatedContact = await response.json();
+    try {
+      const response = await axios.put(`${API_URL}/${contact._id}`, contact, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
       setContacts((prevContacts) =>
-        prevContacts.map((c) => (c._id === updatedContact._id ? updatedContact : c))
+        prevContacts.map((c) => (c._id === response.data._id ? response.data : c))
       );
       setEditingContact(null);
+    } catch (error) {
+      console.error('Error updating contact:', error);
     }
   };
 
   const deleteContact = async (id) => {
-    const response = await fetch(`/api/contacts/${id}`, {
-      method: 'DELETE',
-    });
-    if (response.ok) {
+    try {
+      await axios.delete(`${API_URL}/${id}`);
       setContacts((prevContacts) => prevContacts.filter((contact) => contact._id !== id));
+    } catch (error) {
+      console.error('Error deleting contact:', error);
     }
   };
 
